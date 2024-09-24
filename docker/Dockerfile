@@ -56,7 +56,6 @@ RUN apt-get update \
     && echo extension=sqlsrv.so > /etc/php/8.3/cli/conf.d/20-sqlsrv.ini \
     && apt-get -y autoremove \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/ /tmp/ /var/tmp/*
 
 RUN setcap "cap_net_bind_service=+ep" /usr/bin/php8.3
 
