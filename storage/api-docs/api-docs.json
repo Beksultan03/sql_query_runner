@@ -1,0 +1,233 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "SqlQueryRunner API",
+        "contact": {},
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:80/api",
+            "description": "Base server for development"
+        }
+    ],
+    "paths": {
+        "/product/details/{serial_number}": {
+            "get": {
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Method of getting product details by serial number",
+                "operationId": "details",
+                "parameters": [
+                    {
+                        "name": "serial_number",
+                        "in": "path",
+                        "description": "Product's serial number",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "SMJ09VRM0"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/SuccessResponse"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerErrorResponse"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "BadOperation": {
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Bad operation"
+                    }
+                },
+                "type": "object"
+            },
+            "Forbidden": {
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "This action is unauthorized"
+                    }
+                },
+                "type": "object"
+            },
+            "InternalServerError": {
+                "required": [
+                    "message",
+                    "errors"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Error message"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "example": "Error message"
+                            }
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "InvalidData": {
+                "required": [
+                    "message",
+                    "errors"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Invalid data"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "example": "Validation error"
+                            }
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "NotFound": {
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "The requested resource is not found"
+                    }
+                },
+                "type": "object"
+            },
+            "Success": {
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Success"
+                    }
+                },
+                "type": "object"
+            },
+            "Unauthorized": {
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "example": "Unauthorized"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "responses": {
+            "BadOperationResponse": {
+                "description": "Invalid request",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/BadOperation"
+                        }
+                    }
+                }
+            },
+            "ForbiddenResponse": {
+                "description": "User does not have access",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Forbidden"
+                        }
+                    }
+                }
+            },
+            "InternalServerErrorResponse": {
+                "description": "Internal Server Error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/InternalServerError"
+                        }
+                    }
+                }
+            },
+            "InvalidDataResponse": {
+                "description": "Incorrect data",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/InvalidData"
+                        }
+                    }
+                }
+            },
+            "NotFoundResponse": {
+                "description": "Entity not found",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/NotFound"
+                        }
+                    }
+                }
+            },
+            "SuccessResponse": {
+                "description": "Success",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Success"
+                        }
+                    }
+                }
+            },
+            "UnauthorizedResponse": {
+                "description": "User is not authorized",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Unauthorized"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Product",
+            "description": "Product"
+        }
+    ]
+}
