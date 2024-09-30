@@ -18,6 +18,7 @@ class ProductService
 
         $result = [
             'serial_number' => $serialNumber,
+            'order_id' => $order->order_id,
             'raid' => $this->getRaidFromOrder($order)
         ];
 
