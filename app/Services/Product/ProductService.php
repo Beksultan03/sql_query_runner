@@ -23,25 +23,37 @@ class ProductService
             return [];
         }
 
-        $orderId = $this->getOrderIdBySerialNumber($serialNumber);
+        $order = $this->getOrderIdBySerialNumber($serialNumber);
 
-        $sku = $this->getOrderSku($orderId);
+        $sku = $this->getOrderSku($order?->order_id);
+
+        $orderNumber = $order?->order_id ? $order?->is_PU_order ? "PU".sprintf("%'.05d", $order->order_id): $order->order_id: null;
 
         $result = [
             'serial_number' => $serialNumber,
-            'order_id' => $orderId,
-            'raid' => $this->getRaidFromOrder($orderId)
+            'order_id' => $orderNumber,
+            'raid' => $this->getRaidFromOrder($order?->order_id)
         ];
 
-        $productDetails = $this->getProductDetails($sku, $serialNumberValue);
+        if (!$sku) {
+            $productDetails = $this->getBaseProductDetailsById($serialNumberValue->product_id);
+            return array_merge($result, $productDetails);
+        }
+
+        if (strpos($sku, "CreateCDT")){
+            $productDetails = $this->getComponentDetails($order?->order_id, $serialNumberValue);
+        }
+        else{
+            $productDetails = $this->getProductDetails($sku, $serialNumberValue);
+        }
 
         return array_merge($result, $productDetails);
     }
 
-    private function getOrderIdBySerialNumber(string $serialNumber): ?string
+    private function getOrderIdBySerialNumber(string $serialNumber): ?object
     {
         return $this->technicianOrderService->getOrderId($serialNumber)
-            ?: $this->serialNumberService->getOrderId($serialNumber);
+            ?? $this->serialNumberService->getOrderId($serialNumber);
     }
 
     private function getOrderSku(?string $orderId): ?string
@@ -77,12 +89,93 @@ class ProductService
 
     private function getProductDetails(?string $sku, object $serialNumberValue): array
     {
-        if (!$sku) {
-            return $this->getBaseProductDetailsById($serialNumberValue->product_id);
-        }
         $kitData = $this->getDetailsFromKit($sku);
 
         return $kitData ?? $this->getBaseProductDetailsById($serialNumberValue->product_id);
+    }
+    private function getComponentDetails(?string $orderId, object $serialNumberValue): array
+    {
+        if (!$orderId){
+            return $this->getBaseProductDetailsById($serialNumberValue->product_id);
+        }
+        $kitData = $this->getDetailsFromComponents($orderId);
+
+        return $kitData ?? $this->getBaseProductDetailsById($serialNumberValue->product_id);
+    }
+
+    private function getDetailsFromComponents(string $orderId)
+    {
+        $orderComponents = DB::table('tbl_sb_order_item_components as components')
+            ->select('components.productid as sku')
+            ->where('components.orderid', $orderId)
+            ->get();
+
+        if (empty($orderComponents)) {
+            $orderComponents = DB::table('tbl_sb_history_order_item_components as components')
+                ->select('components.productid as sku')
+                ->where('components.orderid', $orderId)
+                ->get();
+        }
+        if (empty($orderComponents)) {
+            return null;
+        }
+        $partDetails = [];
+        foreach ($orderComponents as $orderComponent) {
+            $partDetail = $this->checkPartType($orderComponent->sku);
+            $partDetails = array_merge($partDetails, $partDetail);
+        }
+        return [
+            'display_title' => null,
+            'ram'           => $partDetails['ram'] ?? null,
+            'storage'       => $partDetails['storage'] ?? null,
+            'gpu'           => null,
+            'os'            => $partDetails['os'] ?? null,
+            'cpu'           => $partDetails['cpu'] ?? null
+        ];
+    }
+
+    private function checkPartType($sku): array
+    {
+        $result = [];
+
+        $checkIfRam = DB::table('tbl_parts')
+            ->select('name')
+            ->where('sku', $sku)
+            ->whereIn('part_type_id', [4, 5, 17, 18])
+            ->first();
+        if ($checkIfRam) {
+            $result['ram'] = $checkIfRam->name;
+        } else {
+            $checkIfStorage = DB::table('tbl_parts')
+                ->select('name')
+                ->where('sku', $sku)
+                ->whereIn('part_type_id', [6, 7, 8, 9, 10, 16, 22])
+                ->first();
+
+            if ($checkIfStorage) {
+                $result['storage'] = $checkIfStorage->name;
+            } else {
+                $checkIfCPU = DB::table('tbl_parts')
+                    ->select('name')
+                    ->where('sku', $sku)
+                    ->whereIn('part_type_id', [25])
+                    ->first();
+                if ($checkIfCPU) {
+                    $result['cpu'] = $checkIfCPU->name;
+                }
+            }
+        }
+
+        $checkIfOS = DB::table('tbl_parts')
+            ->select('name')
+            ->where('sku', $sku)
+            ->whereIn('part_type_id', [15])
+            ->first();
+
+        if ($checkIfOS) {
+            $result['os'] = $checkIfOS->name;
+        }
+        return $result;
     }
 
     private function getBaseProductDetailsById(int $productId): array

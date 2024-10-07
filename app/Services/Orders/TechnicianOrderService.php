@@ -6,14 +6,13 @@ use Illuminate\Support\Facades\DB;
 
 class TechnicianOrderService
 {
-    public function getOrderId(string $serialNumber): ?string
+    public function getOrderId(string $serialNumber): ?object
     {
         $order = DB::table("tbl_sb_technician_orders")
             ->where('serial_number', $serialNumber)
-            ->select('order_id')
+            ->select('order_id', 'is_PU_order')
             ->first();
-
-        return $order ? $order->order_id : null;
+        return $order ?? null;
     }
 
 }
